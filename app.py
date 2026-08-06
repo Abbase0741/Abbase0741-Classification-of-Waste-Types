@@ -134,7 +134,7 @@ if uploaded_file is not None:
     container_action = st.empty()
     btn_predict = container_action.button("Start Computer Vision Inference", type="primary", use_container_width=True)
     
-    st.image(img, caption="Uploaded Waste Image Sample", use_column_width=True)
+    st.image(img, caption="Uploaded Waste Image Sample", use_container_width=True)
     
     if btn_predict:
         if model is not None:
