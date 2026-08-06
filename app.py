@@ -7,6 +7,9 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import streamlit as st
 import gdown
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Flatten, Dense, Dropout, InputLayer
+from tensorflow.keras.applications import DenseNet169
 
 # Page Configuration & UI Settings
 st.set_page_config(page_title="Waste Classification Engine - DenseNet169", layout="centered")
@@ -56,24 +59,43 @@ CONFIDENCE_THRESHOLD = 0.50  # 50% Threshold
 # File ID Google Drive milikmu
 GDRIVE_FILE_ID = '16I8s00QRFE1u2uW_ose3QyEioigqnl5B' 
 MODEL_FILENAME = 'modelDenseNet169v3.keras'
+def build_densenet_architecture():
+    # 1. Base model DenseNet169
+    base_model = DenseNet169(weights=None, include_top=False, input_shape=(150, 150, 3))
+    
+    # 2. Reconstruct Sequential Architecture sesuai config kamu
+    model = Sequential([
+        InputLayer(input_shape=(150, 150, 3)),
+        base_model,
+        Conv2D(64, (3, 3), padding='same', activation='relu'),
+        BatchNormalization(),
+        MaxPooling2D((2, 2)),
+        Flatten(),
+        Dense(512, activation='relu'),
+        Dropout(0.2),
+        Dense(3, activation='softmax')
+    ])
+    return model
 
 @st.cache_resource
 def load_densenet_model():
-    # Cek apakah file model sudah ada di sistem lokal
     if not os.path.exists(MODEL_FILENAME):
-        with st.spinner("Downloading model from Google Drive... Please wait, this only happens once."):
-            url = f'https://drive.google.com/uc?id={GDRIVE_FILE_ID}'
-            # Unduh file menggunakan gdown
-            gdown.download(url, MODEL_FILENAME, quiet=False)
+        with st.spinner("Downloading model from Google Drive... Please wait."):
+            gdown.download(id=GDRIVE_FILE_ID, output=MODEL_FILENAME, quiet=False, fuzzy=True)
             
     try:
-        model = load_model(MODEL_FILENAME)
+        # Bangun arsitektur lalu muat bobotnya
+        model = build_densenet_architecture()
+        model.load_weights(MODEL_FILENAME)
         return model
     except Exception as e:
-        st.error(f"❌ Failed to load DenseNet169 model: {e}")
-        return None
+        # Fallback jika ternyata load_model biasa bekerja
+        try:
+            return tf.keras.models.load_model(MODEL_FILENAME, compile=False)
+        except Exception as err:
+            st.error(f"❌ Failed to load model: {err}")
+            return None
 
-# Panggil fungsi
 model = load_densenet_model()
 
 # 3. Image Preprocessing & Inference Function
