@@ -6,6 +6,7 @@ from PIL import Image
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import streamlit as st
+import gdown
 
 # Page Configuration & UI Settings
 st.set_page_config(page_title="Waste Classification Engine - DenseNet169", layout="centered")
@@ -52,20 +53,27 @@ TARGET_SIZE = (150, 150)
 CONFIDENCE_THRESHOLD = 0.50  # 50% Threshold
 
 # 2. Load Keras Model with Cache
+# File ID Google Drive milikmu
+GDRIVE_FILE_ID = '16I8s00QRFE1u2uW_ose3QyEioigqnl5B' 
+MODEL_FILENAME = 'modelDenseNet169v3.keras'
+
 @st.cache_resource
 def load_densenet_model():
-    model_path = 'modelDenseNet169.keras'
+    # Cek apakah file model sudah ada di sistem lokal
+    if not os.path.exists(MODEL_FILENAME):
+        with st.spinner("Downloading model from Google Drive... Please wait, this only happens once."):
+            url = f'https://drive.google.com/uc?id={GDRIVE_FILE_ID}'
+            # Unduh file menggunakan gdown
+            gdown.download(url, MODEL_FILENAME, quiet=False)
+            
     try:
-        if os.path.exists(model_path):
-            model = load_model(model_path)
-            return model
-        else:
-            st.error(f"⚠️ Model file '{model_path}' not found in the root directory.")
-            return None
+        model = load_model(MODEL_FILENAME)
+        return model
     except Exception as e:
         st.error(f"❌ Failed to load DenseNet169 model: {e}")
         return None
 
+# Panggil fungsi
 model = load_densenet_model()
 
 # 3. Image Preprocessing & Inference Function
