@@ -80,21 +80,18 @@ def build_densenet_architecture():
 @st.cache_resource
 def load_densenet_model():
     if not os.path.exists(MODEL_FILENAME):
-        with st.spinner("Downloading model from Google Drive... Please wait."):
-            gdown.download(id=GDRIVE_FILE_ID, output=MODEL_FILENAME, quiet=False, fuzzy=True)
+        with st.spinner("Downloading model from Google Drive... Please wait, this may take a minute."):
+            # Menggunakan URL direct download yang melewati peringatan virus scan Google Drive
+            url = f'https://drive.google.com/uc?id={GDRIVE_FILE_ID}&confirm=t'
+            gdown.download(url, MODEL_FILENAME, quiet=False)
             
     try:
-        # Bangun arsitektur lalu muat bobotnya
-        model = build_densenet_architecture()
-        model.load_weights(MODEL_FILENAME)
+        # Muat model
+        model = load_model(MODEL_FILENAME, compile=False)
         return model
     except Exception as e:
-        # Fallback jika ternyata load_model biasa bekerja
-        try:
-            return tf.keras.models.load_model(MODEL_FILENAME, compile=False)
-        except Exception as err:
-            st.error(f"❌ Failed to load model: {err}")
-            return None
+        st.error(f"❌ Failed to load model: {e}")
+        return None
 
 model = load_densenet_model()
 
