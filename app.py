@@ -59,8 +59,9 @@ CONFIDENCE_THRESHOLD = 0.50  # 50% Threshold
 # File ID Google Drive milikmu
 GDRIVE_FILE_ID = '16I8s00QRFE1u2uW_ose3QyEioigqnl5B' 
 MODEL_FILENAME = 'modelDenseNet169v3.keras'
-def build_densenet_architecture():
-    # 1. Base model DenseNet169
+
+def build_densenet_model():
+    # 1. Inisialisasi Base Model DenseNet169 (tanpa top classification head)
     base_model = DenseNet169(weights=None, include_top=False, input_shape=(150, 150, 3))
     
     # 2. Reconstruct Sequential Architecture sesuai config kamu
@@ -80,17 +81,18 @@ def build_densenet_architecture():
 @st.cache_resource
 def load_densenet_model():
     if not os.path.exists(MODEL_FILENAME):
-        with st.spinner("Downloading model from Google Drive... Please wait, this may take a minute."):
-            # Menggunakan URL direct download yang melewati peringatan virus scan Google Drive
+        with st.spinner("Downloading model from Google Drive... Please wait."):
             url = f'https://drive.google.com/uc?id={GDRIVE_FILE_ID}&confirm=t'
             gdown.download(url, MODEL_FILENAME, quiet=False)
             
     try:
-        # Muat model
-        model = load_model(MODEL_FILENAME, compile=False)
+        # Bangun arsitektur terlebih dahulu
+        model = build_densenet_model()
+        # Muat bobot (weights) saja dari file .keras
+        model.load_weights(MODEL_FILENAME)
         return model
     except Exception as e:
-        st.error(f"❌ Failed to load model: {e}")
+        st.error(f"❌ Failed to load model weights: {e}")
         return None
 
 model = load_densenet_model()
